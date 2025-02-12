@@ -1,29 +1,54 @@
 const express = require('express');
 const path = require('path');
+const crypto = require('crypto');
 const app = express();
 
 // Configuração básica
 const port = process.env.PORT || 3000;
 
-// Log para debug
-console.log('Iniciando servidor...');
-console.log('Ambiente:', process.env.NODE_ENV);
-console.log('Porta:', port);
+// Armazenamento temporário para as slugs
+const temporarySlugs = new Map();
 
-// Rota básica para teste
-app.get('/', (req, res) => {
-    res.send('Servidor funcionando!');
+// Configuração para arquivos estáticos
+app.use(express.static(path.join(__dirname, 'public')));
+app.use('/checkout', express.static(path.join(__dirname, 'checkout')));
+app.use('/temp-checkout', express.static(path.join(__dirname, 'checkout')));
+
+// Rota para gerar checkout
+app.get('/generate-checkout', (req, res) => {
+    try {
+        const slug = crypto.randomBytes(8).toString('hex');
+        temporarySlugs.set(slug, {
+            created: Date.now(),
+            expires: Date.now() + (30 * 1000) // 30 segundos
+        });
+        res.json({ url: `/temp-checkout/${slug}` });
+    } catch (error) {
+        console.error('Erro ao gerar checkout:', error);
+        res.status(500).json({ error: 'Erro ao gerar checkout' });
+    }
+});
+
+// Rota para checkout temporário
+app.get('/temp-checkout/:slug', (req, res) => {
+    try {
+        const slug = req.params.slug;
+        const slugData = temporarySlugs.get(slug);
+
+        if (!slugData || Date.now() > slugData.expires) {
+            return res.status(404).send('Link expirado');
+        }
+
+        res.sendFile(path.join(__dirname, 'checkout', 'index.html'));
+    } catch (error) {
+        console.error('Erro ao acessar checkout:', error);
+        res.status(500).send('Erro interno do servidor');
+    }
 });
 
 // Health check
 app.get('/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
-});
-
-// Tratamento de erros
-app.use((err, req, res, next) => {
-    console.error('Erro:', err);
-    res.status(500).send('Erro interno do servidor');
 });
 
 // Iniciar servidor

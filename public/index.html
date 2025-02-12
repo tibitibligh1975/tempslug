@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Página Inicial</title>
+    <title>Gerador de Checkout</title>
     <style>
         body {
             display: flex;
@@ -51,6 +51,7 @@
                 }
             } catch (error) {
                 console.error('Erro ao gerar checkout:', error);
+                alert('Erro ao gerar checkout. Tente novamente.');
             }
         }
     </script>
