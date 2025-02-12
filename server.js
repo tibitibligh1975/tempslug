@@ -2,7 +2,7 @@ const express = require('express');
 const path = require('path');
 const crypto = require('crypto');
 const app = express();
-const port = 3000;
+const port = process.env.PORT || 3000;
 
 // Armazenamento temporário para as slugs (em produção, considere usar Redis)
 const temporarySlugs = new Map();
@@ -16,7 +16,7 @@ app.use((req, res, next) => {
     next();
 });
 
-// Página inicial com botão
+// Rota raiz - página inicial com botão
 app.get('/', (req, res) => {
     res.send(`
         <!DOCTYPE html>
@@ -37,6 +37,10 @@ app.get('/', (req, res) => {
                 }
                 .container {
                     text-align: center;
+                    background-color: white;
+                    padding: 30px;
+                    border-radius: 8px;
+                    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
                 }
                 .button {
                     background-color: #00C853;
@@ -55,6 +59,7 @@ app.get('/', (req, res) => {
         </head>
         <body>
             <div class="container">
+                <h2 style="color: #484848; margin-bottom: 20px;">Gerar Link de Checkout</h2>
                 <button class="button" onclick="generateCheckout()">Gerar Checkout</button>
             </div>
             <script>
@@ -75,7 +80,7 @@ app.get('/', (req, res) => {
     `);
 });
 
-// Endpoint para gerar nova URL temporária
+// Rota para gerar nova URL temporária
 app.get('/generate-checkout', (req, res) => {
     // Gerar slug aleatório
     const slug = crypto.randomBytes(8).toString('hex');
@@ -144,6 +149,11 @@ app.get('/temp-checkout/:slug', (req, res) => {
     }
 
     // Servir o conteúdo do checkout
+    res.sendFile(path.join(__dirname, 'checkout', 'index.html'));
+});
+
+// Rota para servir o checkout diretamente (opcional, caso queira manter)
+app.get('/checkout', (req, res) => {
     res.sendFile(path.join(__dirname, 'checkout', 'index.html'));
 });
 
