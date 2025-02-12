@@ -3,30 +3,29 @@ const path = require('path');
 const crypto = require('crypto');
 const app = express();
 
-// Configuração da porta - importante para o Railway
+// Garantir que usamos a porta do Railway
 const port = process.env.PORT || 3000;
 
-// Log para debug
-app.use((req, res, next) => {
-    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-    next();
-});
+// Adicionar logs para debug
+console.log('Iniciando servidor...');
+console.log('PORT:', process.env.PORT);
 
 // Armazenamento temporário para as slugs
 const temporarySlugs = new Map();
 
 // Configuração para arquivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
-app.use(express.static(path.join(__dirname, 'checkout')));
+app.use('/checkout', express.static(path.join(__dirname, 'checkout')));
+app.use('/temp-checkout', express.static(path.join(__dirname, 'checkout')));
 
-// Rota raiz - agora serve o arquivo index.html da pasta public
+// Rota raiz
 app.get('/', (req, res) => {
+    console.log('Acessando rota raiz');
     res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 // Rota para gerar checkout
 app.get('/generate-checkout', (req, res) => {
-    console.log('Gerando novo checkout');
     const slug = crypto.randomBytes(8).toString('hex');
     temporarySlugs.set(slug, {
         created: Date.now(),
@@ -37,7 +36,6 @@ app.get('/generate-checkout', (req, res) => {
 
 // Rota para checkout temporário
 app.get('/temp-checkout/:slug', (req, res) => {
-    console.log(`Acessando checkout com slug: ${req.params.slug}`);
     const slug = req.params.slug;
     const slugData = temporarySlugs.get(slug);
 
@@ -65,12 +63,12 @@ setInterval(() => {
 
 // Iniciar o servidor
 app.listen(port, '0.0.0.0', () => {
-    console.log(`Servidor rodando na porta ${port}`);
+    console.log(`Servidor rodando em http://0.0.0.0:${port}`);
 });
 
-// Tratamento de erros não capturados
-process.on('uncaughtException', (error) => {
-    console.error('Erro não capturado:', error);
+// Tratamento de erros
+process.on('uncaughtException', (err) => {
+    console.error('Erro não tratado:', err);
 });
 
 process.on('unhandledRejection', (error) => {
